@@ -38,3 +38,22 @@ to run the code, the user must define their working directory to their local rep
 
 Should all be done correctly above, the code will run and output a grey map of the US with orange shapes
 outlining all US MSAs.
+
+# Troubleshooting `library(rJava)`
+---
+If you're using a Windows operating system to run the script, you might run into issues with `library(xlsx)` not running.
+This likely due to the bit system and the Java file path that it dependancy, `rJava`, was expecting. This issue has been addressed
+on [StackOverflow](https://stackoverflow.com/questions/26806776/r-project-xlsx-package-installation-failure-due-to-java-issues)
+and [R-statistics blog](https://www.r-statistics.com/2012/08/how-to-load-the-rjava-package-after-the-error-java_home-cannot-be-determined-from-the-registry/).
+To summarize the two posts, `xlsx` relies on [Java](https://java.com/en/download/) to run properly. If you have a 32-bit version of R, 
+`xlsx` is going to look for a 32-bit version of Java, which is typically in `C:\Program Files (x86)` and if you have a 
+64-bit version, the expected file path is likely `C:\Program Files\`. Users can see which bit version of R they have when
+they first open R where it says `Platform:` (row 3). At the end of the text, it will either say `(32-bit)` or `(64-bit)`.
+Depending on the version you have, install the appropriate Java package. After Java has been downloaded, users should run
+one of the following depending on their version of R:
+
+- `Sys.setenv(JAVA_HOME='C:\\Program Files\\Java\\NAME OF FOLDER')` for the 64-bit version
+- `Sys.setenv(JAVA_HOME='C:\\Program Files (x86)\\Java\\NAME OF FOLDER')` for the 32-bit version
+
+Afterwards, restart R and you should be able to successfully run `install.packages("rJava")` and `library(rJava)`.
+If so, users can run the `xlsx` package and continue running the script.
