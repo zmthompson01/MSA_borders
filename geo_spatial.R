@@ -75,6 +75,14 @@ if (rgeosStatus()) {#MSA
     #data.frame(MSA_fips, MSA_name)[np > 1, ]
 }#MSA
 
+data <- read.xlsx("data/sample_data.xlsx", sheetIndex=1)  #read in Excel file
+df <- ddply(data,.(state,county),nrow) #add a count to each duplicate and consolidate down to uniqu occurences
+sd <- as.numeric(sd(df$V1))
+max1 <- as.numeric(3 * sd(df$V1))
+df$V2 <- as.numeric(ifelse((df$V1>max1),max1,df$V1))
+df$V2 <- as.numeric(cut(df$V2, 10))
+
+
 theme_clean <- function(base_size = 12) {
     require(grid)
     theme_grey(base_size) %+replace%
@@ -92,10 +100,38 @@ theme_clean <- function(base_size = 12) {
         )
     
 }#Theme
-mapping <- map('county', fill = TRUE, col = 'grey90')
-mapping0 <- ggplot(mapping, aes(x = long, y = lat, group=group)) +
-    geom_polygon(fill='grey60') +
-    coord_map("polyconic") +
+# mapping <- map('county', fill = TRUE, col = 'grey90')
+# mapping0 <- ggplot(mapping, aes(x = long, y = lat, group=group)) +
+#     geom_polygon(fill='grey60') +
+#     coord_map("polyconic") +
+#     theme_clean() +
+#     geom_path(data = ncscva_MSA, color = "orange")
+# mapping0
+
+#get map data for US counties and states
+county_map <- map_data("county")
+state_map <- map_data("state")
+
+#merge data and county_map
+map <- merge(county_map, df, by.x=c("state", "county"), 
+             by.y=c("state","county"), all.x=TRUE)
+
+#resort merged data
+map <- arrange(map, group, order)
+
+#relpace NA with 0's
+map[is.na(map)] <- 0
+
+
+final_map <-     
+    ggplot(map, aes(x = long, y = lat, group=group)) +
+    geom_polygon(colour = "grey80", aes(fill = V2)) +
+    expand_limits(x = map$long, y = map$lat) +
+    coord_map("polyconic") + 
+    labs(fill="Number Per\nCounty") +
     theme_clean() +
-    geom_path(data = ncscva_MSA, color = "orange")
-mapping0
+    geom_path(data = state_map, colour="black") +
+    scale_fill_continuous(low="yellow", high="red",
+                          limits = c(min(df$V2), max(df$V2)),
+                          na.value="grey90")
+    final_map + geom_path(data = ncscva_MSA, color = "blue")
